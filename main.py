@@ -1,5 +1,5 @@
 import tkinter as tk
-import pyautogui, gc
+import pyautogui
 from pynput import keyboard, mouse
 
 x, y = pyautogui.size()
@@ -31,6 +31,12 @@ def on_mouse_click(x, y, button, pressed):
     else:
         last_mouse_click = None
         label.config(text="等待按鍵或鼠標事件...", font=("Arial", 30))
+
+def on_mouse_scroll(x, y, dx, dy):
+    if dy > 0:
+        label.config(text="滑鼠滾輪向上滾動", font=("Arial", 30))
+    else:
+        label.config(text="滑鼠滾輪向下滾動", font=("Arial", 30))
 
 def get_key_name(key):
     if isinstance(key, keyboard.KeyCode):
@@ -82,11 +88,11 @@ def update_label():
                             key_strings.append(".")
                         else:
                             key_strings.append(chr(eval(get_key_name(key.vk))+32))
-            
+
         elif isinstance(key, keyboard.Key):
             key_strings.append(get_key_name(key))
-        
-        
+
+
     label.config(text="按下的按鍵：" + "\n" + '\n'.join(key_strings), font=("Arial", 30))
 
 window = tk.Tk()
@@ -102,4 +108,8 @@ keyboard_listener.start()
 
 mouse_listener = mouse.Listener(on_move=on_mouse_move, on_click=on_mouse_click)
 mouse_listener.start()
+
+mouse_listener.scroll_listener = mouse.Listener(on_scroll=on_mouse_scroll)
+mouse_listener.scroll_listener.start()
+
 window.mainloop()
