@@ -4,6 +4,18 @@ from pynput import keyboard, mouse
 
 x, y = pyautogui.size()
 
+if x == 1920 and y== 1080:
+    font_size = 20
+elif x == 1366 and y == 768:
+    font_size = 15
+elif x == 1280 and y == 720:
+    font_size = 12
+elif x == 2560 and y == 1440:
+    font_size = 25
+else:
+    font_size = round(20*(x/1920)*(y/1080))
+
+
 def on_key_press(key: keyboard.KeyCode):
     if key not in pressed_keys:
         pressed_keys.append(key)
@@ -13,30 +25,33 @@ def on_key_release(key):
     if len(pressed_keys) != 0:
         pressed_keys.remove(pressed_keys[-1])
     if not any(pressed_keys):
-        label.config(text="等待按鍵或鼠標事件...", font=("Arial", 30))
+        label_keyboard.config(text="等待鍵盤事件...", font=("微軟正黑體", font_size, "bold"))
 
 def on_mouse_move(x, y):
     if last_mouse_click:
         button, click_x, click_y = last_mouse_click
-        label.config(text="鼠標拖曳\nX: {}  Y: {}\n 點擊: {} 鍵 ".format(x, y, button.name), font=("Arial", 30))
+        label_mouse.config(text="鼠標拖曳\nX: {}  Y: {}\n 點擊: {} 鍵 \n (點擊鼠標任意\n鍵以還原狀態)".format(x, y, button.name), font=("微軟正黑體", font_size, "bold"))
     else:
-        label.config(text="鼠標移動\nX: {}  Y: {}".format(x, y), font=("Arial", 30))
+        label_mouse.config(text="鼠標移動\nX: {}  Y: {} \n (點擊鼠標任意\n鍵以還原狀態)".format(x, y), font=("微軟正黑體", font_size, "bold"))
 
 def on_mouse_click(x, y, button, pressed):
     global last_mouse_click
     action = "按下" if pressed else "釋放"
     if action == "按下":
         last_mouse_click = (button, x, y)
-        label.config(text="鼠標點擊: {} \n X: {} \n Y: {}".format(button.name, x, y), font=("Arial", 30))
+        label_mouse.config(text="鼠標點擊: {} \n X: {} \n Y: {}".format(button.name, x, y), font=("微軟正黑體", font_size, "bold"))
     else:
         last_mouse_click = None
-        label.config(text="等待按鍵或鼠標事件...", font=("Arial", 30))
+        label_mouse.config(text="等待鼠標事件...", font=("微軟正黑體", font_size, "bold"))
 
 def on_mouse_scroll(x, y, dx, dy):
     if dy > 0:
-        label.config(text="滑鼠滾輪向上滾動", font=("Arial", 30))
-    else:
-        label.config(text="滑鼠滾輪向下滾動", font=("Arial", 30))
+        label_mouse.config(text="滑鼠滾輪\n向上滾動\n(點擊鼠標任意\n鍵以還原狀態)", font=("微軟正黑體", font_size, "bold"))
+    elif dy < 0:
+        label_mouse.config(text="滑鼠滾輪\n向下滾動\n(點擊鼠標任意\n鍵以還原狀態)", font=("微軟正黑體", font_size, "bold"))
+
+def reset_mouse_config():
+    label_mouse.config(text="等待鼠標事件...", font=("微軟正黑體", font_size, "bold"))
 
 def get_key_name(key):
     if isinstance(key, keyboard.KeyCode):
@@ -93,23 +108,32 @@ def update_label():
             key_strings.append(get_key_name(key))
 
 
-    label.config(text="按下的按鍵：" + "\n" + '\n'.join(key_strings), font=("Arial", 30))
+    label_keyboard.config(text="按下的按鍵：" + "\n" + '\n'.join(key_strings), font=("微軟正黑體", font_size, "bold"))
 
 window = tk.Tk()
-window.geometry(f"600x300+{x//3}+{y//3}")
+window.geometry(f"{int(x//4)}x{int(y//5.4)}+{x//3}+{y//3}")
 window.attributes("-topmost", True)
-label = tk.Label(window, text="等待按鍵或鼠標事件...", font=("Arial", 30))
-label.pack()
+frameLeft = tk.Frame(window, width= x//9, height= int(y//5.4))
+frameLeft.pack(side= tk.LEFT, expand= 1)
+frameLeft.pack_propagate(False)
+canvasMiddle = tk.Canvas(window, width= 9, height= int(y//5.4))
+canvasMiddle.create_line(5, 0, 5, 4000, fill="black", width= 1)
+canvasMiddle.pack(side= tk.LEFT)
+frameRight = tk.Frame(window, width= x//9, height= int(y//5.4))
+frameRight.pack(side= tk.LEFT, expand= 1)
+frameRight.pack_propagate(False)
+label_keyboard = tk.Label(frameLeft, text="等待鍵盤事件...", font=("微軟正黑體", font_size, "bold"))
+label_keyboard.pack()
+label_mouse = tk.Label(frameRight, text= "等待鼠標事件...", font=("微軟正黑體", font_size, "bold"))
+label_mouse.pack()
+
 pressed_keys = []
 last_mouse_click = None
 
 keyboard_listener = keyboard.Listener(on_press=on_key_press, on_release=on_key_release)
 keyboard_listener.start()
 
-mouse_listener = mouse.Listener(on_move=on_mouse_move, on_click=on_mouse_click)
+mouse_listener = mouse.Listener(on_move=on_mouse_move, on_click=on_mouse_click, on_scroll= on_mouse_scroll)
 mouse_listener.start()
-
-mouse_listener.scroll_listener = mouse.Listener(on_scroll=on_mouse_scroll)
-mouse_listener.scroll_listener.start()
 
 window.mainloop()
